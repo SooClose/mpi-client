@@ -10,6 +10,8 @@ int WINAPI _tWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
   if( !InitCommonControlsEx( &iccex ) ) {
     MessageBox( NULL, _T("Problem registering classes from comctl32.dll"),
         NULL, MB_OK | MB_ICONEXCLAMATION );
+  } else {
+    DialogBox( hInstance, MAKEINTRESOURCE( IDD_INJECTOR ), NULL, InjectorProc );
   }
 
   return ERROR_SUCCESS;
