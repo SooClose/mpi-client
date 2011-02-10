@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MPI Client", "MPI Client.vcxproj", "{06104FD5-F3FE-4101-8125-63E09C2E2256}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{06104FD5-F3FE-4101-8125-63E09C2E2256}.Debug|Win32.ActiveCfg = Debug|Win32
+		{06104FD5-F3FE-4101-8125-63E09C2E2256}.Debug|Win32.Build.0 = Debug|Win32
+		{06104FD5-F3FE-4101-8125-63E09C2E2256}.Release|Win32.ActiveCfg = Release|Win32
+		{06104FD5-F3FE-4101-8125-63E09C2E2256}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
