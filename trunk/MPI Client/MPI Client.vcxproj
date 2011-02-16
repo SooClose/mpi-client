@@ -74,6 +74,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Formatted.cpp" />
     <ClCompile Include="Injector.cpp" />
     <ClCompile Include="MPI Client.cpp" />
     <ClCompile Include="MPI.cpp" />
