@@ -4,7 +4,7 @@ void InitPacketList( HWND hwndDlg, int nIDDlgItem ) {
   HWND     hwndList = GetDlgItem( hwndDlg, nIDDlgItem );
   LVCOLUMN lvc      = {0};
 
-  lvc.cx   = 40;
+  lvc.cx   = 50;
   lvc.fmt  = LVCFMT_LEFT;
   lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 
@@ -30,7 +30,7 @@ void InitPacketList( HWND hwndDlg, int nIDDlgItem ) {
 }
 
 void DisplayPacket( DWORD nSize, PVOID lpData, HWND hwndDlg, int nIDDlgItem ) {
-  HWND   hwndList  = GetDlgItem( hwndDlg, IDC_PLAINLIST );
+  HWND   hwndList  = GetDlgItem( hwndDlg, nIDDlgItem );
   TCHAR  szBuf[16] = {0};
   LVITEM lvi       = {0};
 
@@ -73,6 +73,7 @@ INT_PTR CALLBACK PlainDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
       PVOID lpData = ( ( PCOPYDATASTRUCT )lParam ) -> lpData;
 
       DisplayPacket( nSize, lpData, hwndDlg, IDC_PLAINLIST );
+      break;
     }
     default:
       return false;

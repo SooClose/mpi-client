@@ -1,7 +1,9 @@
 #include "MPI Client.h"
 
-HMODULE hInjected = NULL;
-HWND    hwndPlain = NULL;
+HMODULE hInjected      = NULL;
+HWND    hwndPlain      = NULL;
+HWND    hwndFormatted  = NULL;
+int     nLastActiveTab = 0;
 
 // returns open process handle
 HANDLE InjectDLL( DWORD dwPID, LPTSTR szDLLPath ) {
@@ -44,8 +46,13 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       tci.pszText = _T("Plain Log");
       TabCtrl_InsertItem( hwndTab, 0, &tci );
 
-      hwndPlain = CreateDialog( GetModuleHandle( NULL ),
+      tci.pszText = _T("Formatted Log");
+      TabCtrl_InsertItem( hwndTab, 1, &tci );
+
+      hwndPlain     = CreateDialog( GetModuleHandle( NULL ),
           MAKEINTRESOURCE( IDD_PLAIN ), hwndDlg, PlainDialogProc );
+      hwndFormatted = CreateDialog( GetModuleHandle( NULL ),
+          MAKEINTRESOURCE( IDD_FORMATTED ), hwndDlg, FormattedDialogProc );
 
       if( RegGetValue( HKEY_CURRENT_USER, REGPATH_SUBKEY, REGVAL_LOCATION,
           RRF_RT_REG_SZ, NULL, lpPath, &cbData ) == ERROR_SUCCESS ) {
@@ -88,7 +95,41 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       break;
     }
     case WM_COPYDATA: {
-      return SendMessage( hwndPlain, WM_COPYDATA, wParam, lParam );
+      return SendMessage( hwndPlain, WM_COPYDATA, wParam, lParam ) ||
+          SendMessage( hwndFormatted, WM_COPYDATA, wParam, lParam );
+    }
+    case WM_NOTIFY: {
+      switch( ( ( NMHDR* )lParam ) -> code ) {
+        case TCN_SELCHANGE: {
+          HWND hwndTab = GetDlgItem( hwndDlg, IDC_TAB );
+
+          switch( nLastActiveTab ) {
+            case 0:
+              ShowWindow( hwndPlain, SW_HIDE );
+              break;
+            case 1:
+              ShowWindow( hwndFormatted, SW_HIDE );
+              break;
+          }
+
+          nLastActiveTab = TabCtrl_GetCurFocus( hwndTab );
+
+          switch( nLastActiveTab ) {
+            case 0:
+              ShowWindow( hwndPlain, SW_SHOW );
+              break;
+            case 1:
+              ShowWindow( hwndFormatted, SW_SHOW );
+              break;
+          }
+
+          break;
+        }
+        default:
+          return false;
+      }
+
+      break;
     }
     case WM_CLOSE: {
       EndDialog( hwndDlg, 0 );
