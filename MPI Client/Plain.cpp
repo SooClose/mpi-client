@@ -68,11 +68,8 @@ INT_PTR CALLBACK PlainDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
       InitPacketList( hwndDlg, IDC_PLAINLIST );
       break;
     }
-    case WM_COPYDATA: {
-      DWORD nSize  = ( ( PCOPYDATASTRUCT )lParam ) -> cbData;
-      PVOID lpData = ( ( PCOPYDATASTRUCT )lParam ) -> lpData;
-
-      DisplayPacket( nSize, lpData, hwndDlg, IDC_PLAINLIST );
+    case WM_NEWPACKET: {
+      DisplayPacket( wParam, ( PVOID )lParam, hwndDlg, IDC_PLAINLIST );
       break;
     }
     default:

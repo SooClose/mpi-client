@@ -95,8 +95,19 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       break;
     }
     case WM_COPYDATA: {
-      return SendMessage( hwndPlain, WM_COPYDATA, wParam, lParam ) ||
-          SendMessage( hwndFormatted, WM_COPYDATA, wParam, lParam );
+      COPYDATASTRUCT cds    = {0};
+      DWORD          nSize  = ( ( PCOPYDATASTRUCT )lParam ) -> cbData;
+      PVOID          lpData = malloc( nSize );
+
+      memcpy_s( lpData, nSize, ( ( PCOPYDATASTRUCT )lParam ) -> lpData, nSize );
+      PostMessage( hwndDlg, WM_NEWPACKET, nSize, ( LPARAM )lpData );
+      break;
+    }
+    case WM_NEWPACKET: {
+      SendMessage( hwndPlain, WM_NEWPACKET, wParam, lParam );
+      SendMessage( hwndFormatted, WM_NEWPACKET, wParam, lParam );
+      free( ( PVOID )lParam );
+      break;
     }
     case WM_NOTIFY: {
       switch( ( ( NMHDR* )lParam ) -> code ) {

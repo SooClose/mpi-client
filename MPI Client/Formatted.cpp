@@ -46,11 +46,8 @@ INT_PTR CALLBACK FormattedDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
       InitPacketList( hwndDlg, IDC_FORMATTEDLIST );
       break;
     }
-    case WM_COPYDATA: {
-      DWORD nSize  = ( ( PCOPYDATASTRUCT )lParam ) -> cbData;
-      PVOID lpData = ( ( PCOPYDATASTRUCT )lParam ) -> lpData;
-
-      DisplayFormattedPacket( nSize, lpData, hwndDlg, IDC_FORMATTEDLIST );
+    case WM_NEWPACKET: {
+      DisplayFormattedPacket( wParam, ( PVOID )lParam, hwndDlg, IDC_FORMATTEDLIST );
       break;
     }
     default:
