@@ -5,6 +5,8 @@
 #include <tchar.h>
 #include <CommCtrl.h>
 #pragma comment(lib, "comctl32.lib")
+#include <Uxtheme.h>
+#pragma comment(lib, "UxTheme.lib")
 #include <TlHelp32.h>
 #include "resource.h"
 
@@ -23,5 +25,6 @@
 
 INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
 INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
+INT_PTR CALLBACK PlainDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 #endif

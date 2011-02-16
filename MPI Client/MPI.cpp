@@ -1,6 +1,7 @@
 #include "MPI Client.h"
 
 HMODULE hInjected = NULL;
+HWND    hwndPlain = NULL;
 
 // returns open process handle
 HANDLE InjectDLL( DWORD dwPID, LPTSTR szDLLPath ) {
@@ -35,6 +36,16 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
     case WM_INITDIALOG: {
       TCHAR lpPath[MAX_PATH] = {0};
       DWORD cbData           = sizeof( lpPath );
+
+      TC_ITEM tci     = {0};
+      HWND    hwndTab = GetDlgItem( hwndDlg, IDC_TAB );
+
+      tci.mask    = TCIF_TEXT;
+      tci.pszText = _T("Plain Log");
+      TabCtrl_InsertItem( hwndTab, 0, &tci );
+
+      hwndPlain = CreateDialog( GetModuleHandle( NULL ),
+          MAKEINTRESOURCE( IDD_PLAIN ), hwndDlg, PlainDialogProc );
 
       if( RegGetValue( HKEY_CURRENT_USER, REGPATH_SUBKEY, REGVAL_LOCATION,
           RRF_RT_REG_SZ, NULL, lpPath, &cbData ) == ERROR_SUCCESS ) {
@@ -74,6 +85,13 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
         SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
       }
 
+      break;
+    }
+    case WM_COPYDATA: {
+      return SendMessage( hwndPlain, WM_COPYDATA, wParam, lParam );
+    }
+    case WM_CLOSE: {
+      EndDialog( hwndDlg, 0 );
       break;
     }
     default:
