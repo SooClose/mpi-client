@@ -1,6 +1,4 @@
 #include "MPI Client.h"
-#define REGPATH_SUBKEY  _T("Software\\MPI")
-#define REGVAL_LOCATION _T("Payload Location")
 
 BOOL SetPath( HWND hwndDlg, LPTSTR lpPath, DWORD nMaxFile ) {
   OPENFILENAME ofn = {0};
@@ -93,18 +91,18 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
               if( RegSetValueEx( hkResult, REGVAL_LOCATION, 0, REG_SZ,
                   ( const BYTE* )lpPath, ( _tcsclen( lpPath ) + 1 ) * sizeof TCHAR ) != ERROR_SUCCESS ) {
                 MessageBox( hwndDlg, _T("Problem setting registry entry for payload location"),
-                    NULL, MB_OK || MB_ICONEXCLAMATION );
+                    NULL, MB_OK | MB_ICONEXCLAMATION );
               } else {
                 SetDlgItemText( hwndDlg, IDC_DLLPATH, lpPath );
               }
 
               if( RegCloseKey( hkResult ) != ERROR_SUCCESS ) {
                 MessageBox( hwndDlg, _T("Problem closing registry handle \
-                    during setting of payload location"), NULL, MB_OK || MB_ICONEXCLAMATION );
+                    during setting of payload location"), NULL, MB_OK | MB_ICONEXCLAMATION );
               }
             } else {
               MessageBox( hwndDlg, _T("Problem creating registry entry for payload location"),
-                  NULL, MB_OK || MB_ICONEXCLAMATION );
+                  NULL, MB_OK | MB_ICONEXCLAMATION );
             }
           }
           break;
@@ -119,12 +117,12 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
       if( ( ( LPNMHDR )lParam ) -> hwndFrom == GetDlgItem( hwndDlg, IDC_PROCESSLIST ) &&
           ( ( ( LPNMHDR )lParam ) -> code == NM_DBLCLK ) ) {
         HWND hwndList = GetDlgItem( hwndDlg, IDC_PROCESSLIST );
-        TCHAR  szProcess[64] = {0};
-        int    nIndex        = ( ( LPNMITEMACTIVATE )lParam ) -> iItem;
+        TCHAR  szPID[64] = {0};
+        int    nIndex    = ( ( LPNMITEMACTIVATE )lParam ) -> iItem;
 
         if( nIndex != -1 ) {
-          ListView_GetItemText( hwndList, nIndex, 0, szProcess, _countof( szProcess ) );
-          MessageBox( 0, szProcess, NULL, NULL );
+          ListView_GetItemText( hwndList, nIndex, 1, szPID, _countof( szPID ) );
+          EndDialog( hwndDlg, _tstol( szPID ) );
         }
       } else {
         return false;
