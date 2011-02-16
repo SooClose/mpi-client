@@ -77,6 +77,7 @@
     <ClCompile Include="Injector.cpp" />
     <ClCompile Include="MPI Client.cpp" />
     <ClCompile Include="MPI.cpp" />
+    <ClCompile Include="Plain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MPI Client.h" />
