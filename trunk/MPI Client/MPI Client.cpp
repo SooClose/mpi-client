@@ -11,7 +11,11 @@ int WINAPI _tWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
     MessageBox( NULL, _T("Problem registering classes from comctl32.dll"),
         NULL, MB_OK | MB_ICONEXCLAMATION );
   } else {
-    DialogBox( hInstance, MAKEINTRESOURCE( IDD_INJECTOR ), NULL, InjectorProc );
+    DWORD dwPID = 0;
+
+    if( ( dwPID = DialogBox( hInstance, MAKEINTRESOURCE( IDD_INJECTOR ), NULL, InjectorProc ) ) != 0 ) {
+      DialogBoxParam( hInstance, MAKEINTRESOURCE( IDD_MPI ), NULL, MPIProc, dwPID );
+    }
   }
 
   return ERROR_SUCCESS;
