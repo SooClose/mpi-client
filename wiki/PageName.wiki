@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary Packet Editor
 
 = Introduction =
 
@@ -8,6 +8,7 @@ http://code.google.com/p/mpi-payload/
 For the time being, because of the lack of work that has gone into this project it is more a proof of concept work. Features intended for the future are:
   * Allows users to define custom regex patterns
   * TreeView to display these patterns and their relationship
+  * Packet injection
   * Suggestions... ?
 
 = Details =
