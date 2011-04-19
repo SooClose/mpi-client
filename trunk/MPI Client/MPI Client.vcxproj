@@ -74,6 +74,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="Formatted.cpp" />
     <ClCompile Include="Injector.cpp" />
     <ClCompile Include="MPI Client.cpp" />
@@ -86,6 +87,9 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MPI Client.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Arrows.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

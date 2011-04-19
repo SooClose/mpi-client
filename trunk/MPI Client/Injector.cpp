@@ -1,5 +1,6 @@
 #include "MPI Client.h"
 
+// Open dialog for payload selection
 BOOL SetPath( HWND hwndDlg, LPTSTR lpPath, DWORD nMaxFile ) {
   OPENFILENAME ofn = {0};
 
@@ -15,6 +16,7 @@ BOOL SetPath( HWND hwndDlg, LPTSTR lpPath, DWORD nMaxFile ) {
   return GetOpenFileName( &ofn );
 }
 
+// Create listview columns
 void InitProcessList( HWND hwndList ) {
   LVCOLUMN lvc = {0};
   lvc.mask     = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
@@ -30,6 +32,7 @@ void InitProcessList( HWND hwndList ) {
   ListView_SetColumnWidth( hwndList, 1, LVSCW_AUTOSIZE_USEHEADER );
 }
 
+// Populate process list
 void FillProcessList( HWND hwndList ) {
   LVITEM         lvI           = {0};
   PROCESSENTRY32 ProcessStruct = {0};
@@ -60,6 +63,7 @@ void FillProcessList( HWND hwndList ) {
   CloseHandle( hSnapshot );
 }
 
+// DialogProc for Injector
 INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
   switch( uMsg ) {
     case WM_INITDIALOG: {
@@ -72,6 +76,7 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
       DWORD dwStyle = SendMessage( GetDlgItem( hwndDlg, IDC_PROCESSLIST ), LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0 );
       SendMessage( GetDlgItem( hwndDlg, IDC_PROCESSLIST ), LVM_SETEXTENDEDLISTVIEWSTYLE, 0, dwStyle | LVS_EX_FULLROWSELECT );
 
+      // Check whether payload location has previously been set
       if( RegGetValue( HKEY_CURRENT_USER, REGPATH_SUBKEY, REGVAL_LOCATION,
           RRF_RT_REG_SZ, NULL, lpPath, &cbData ) == ERROR_SUCCESS ) {
         SetDlgItemText( hwndDlg, IDC_DLLPATH, lpPath );
@@ -85,6 +90,7 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
           TCHAR lpPath[MAX_PATH] = {0};
           HKEY  hkResult         = NULL;
 
+          // Open selection dialogue and set registry
           if( SetPath( hwndDlg, lpPath, _countof( lpPath ) ) != 0 ) {
             if( RegCreateKeyEx( HKEY_CURRENT_USER, REGPATH_SUBKEY, NULL, NULL,
                 REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, NULL ) == ERROR_SUCCESS ) {
@@ -114,8 +120,15 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
       break;
     }
     case WM_NOTIFY: {
+      // Double-click for injection
       if( ( ( LPNMHDR )lParam ) -> hwndFrom == GetDlgItem( hwndDlg, IDC_PROCESSLIST ) &&
           ( ( ( LPNMHDR )lParam ) -> code == NM_DBLCLK ) ) {
+        if( Edit_GetTextLength( GetDlgItem( hwndDlg, IDC_DLLPATH ) ) == 0 ) {
+          MessageBox( hwndDlg, _T("No payload specified"), NULL, MB_OK | MB_ICONEXCLAMATION );
+          SendMessage( hwndDlg, WM_COMMAND, MAKEWPARAM( IDC_BROWSE, NULL ), NULL );
+          break;
+        }
+
         HWND hwndList = GetDlgItem( hwndDlg, IDC_PROCESSLIST );
         TCHAR  szPID[64] = {0};
         int    nIndex    = ( ( LPNMITEMACTIVATE )lParam ) -> iItem;
