@@ -2,7 +2,10 @@
 #define _MPI_H
 
 #include <Windows.h>
+#include <WindowsX.h>
 #include <tchar.h>
+#include <Shlwapi.h>
+#pragma comment(lib, "Shlwapi.lib")
 #include <CommCtrl.h>
 #pragma comment(lib, "comctl32.lib")
 #include <Uxtheme.h>
@@ -23,7 +26,10 @@
 #define REGPATH_SUBKEY  _T("Software\\MPI")
 #define REGVAL_LOCATION _T("Payload Location")
 
-#define WM_NEWPACKET    WM_APP + 100 // wParam = cbData, lParam = lpData
+#define WM_NEWPACKET      WM_APP + 100 // wParam = cbData, lParam = lpData
+#define WM_IMAGELISTREADY WM_APP + 101 // wParam = hImageList
+
+#define IMAGELIST_TIMER   1
 
 INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
 INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
