@@ -1,14 +1,15 @@
 #include "MPI Client.h"
 
 // Display packets as hex
-void DisplayPacket( DWORD nSize, PVOID lpData, HWND hwndDlg, int nIDDlgItem ) {
+void DisplayPacket( PACKET_INFO* lpPI, PVOID lpData, HWND hwndDlg, int nIDDlgItem ) {
   HWND   hwndList  = GetDlgItem( hwndDlg, nIDDlgItem );
   TCHAR  szBuf[16] = {0};
   LVITEM lvi       = {0};
+  DWORD  nSize     = lpPI -> cbData;
 
   lvi.mask   = LVIF_IMAGE;
   lvi.iItem  = ListView_GetItemCount( hwndList );
-  lvi.iImage = 1;
+  lvi.iImage = lpPI -> dwData;
   ListView_InsertItem( hwndList, &lvi );
 
   lvi.mask = LVIF_TEXT;
@@ -49,12 +50,11 @@ INT_PTR CALLBACK PlainDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
       ImageList_Add( hIML, hbmArrows, NULL );
       DeleteObject( hbmArrows );
 
-      // ListView_SetImageList( GetDlgItem( hwndDlg, IDC_PLAINLIST ), hIML, LVSIL_SMALL );
       SendMessage( ( HWND )lParam, WM_IMAGELISTREADY, ( WPARAM )hIML, NULL );
       break;
     }
     case WM_NEWPACKET: {
-      DisplayPacket( wParam, ( PVOID )lParam, hwndDlg, IDC_PLAINLIST );
+      DisplayPacket( ( PACKET_INFO* )wParam, ( PVOID )lParam, hwndDlg, IDC_PLAINLIST );
       break;
     }
     case WM_IMAGELISTREADY: {

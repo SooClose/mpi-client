@@ -26,10 +26,15 @@
 #define REGPATH_SUBKEY  _T("Software\\MPI")
 #define REGVAL_LOCATION _T("Payload Location")
 
-#define WM_NEWPACKET      WM_APP + 100 // wParam = cbData, lParam = lpData
+#define WM_NEWPACKET      WM_APP + 100 // wParam = lpPacketInfo, lParam = lpData
 #define WM_IMAGELISTREADY WM_APP + 101 // wParam = hImageList
 
 #define IMAGELIST_TIMER   1
+
+typedef struct {
+  DWORD cbData;
+  DWORD dwData;
+} PACKET_INFO;
 
 INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
 INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
