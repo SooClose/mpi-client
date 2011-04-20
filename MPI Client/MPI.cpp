@@ -123,9 +123,13 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       COPYDATASTRUCT cds    = {0};
       DWORD          nSize  = ( ( PCOPYDATASTRUCT )lParam ) -> cbData;
       PVOID          lpData = malloc( nSize );
+      PVOID          lpPI   = malloc( sizeof( PACKET_INFO ) );
 
       memcpy_s( lpData, nSize, ( ( PCOPYDATASTRUCT )lParam ) -> lpData, nSize );
-      PostMessage( hwndDlg, WM_NEWPACKET, nSize, ( LPARAM )lpData );
+      
+      ( ( PACKET_INFO* )lpPI ) -> cbData = nSize;
+      ( ( PACKET_INFO* )lpPI ) -> dwData = ( ( PCOPYDATASTRUCT )lParam ) -> dwData;
+      PostMessage( hwndDlg, WM_NEWPACKET, ( WPARAM )lpPI, ( LPARAM )lpData );
       break;
     }
     // Send the received packet to the 2 different packet windows
@@ -134,6 +138,7 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       SendMessage( hwndPlain, WM_NEWPACKET, wParam, lParam );
       SendMessage( hwndFormatted, WM_NEWPACKET, wParam, lParam );
       free( ( PVOID )lParam );
+      free( ( PVOID )wParam );
       break;
     }
     case WM_TIMER: {

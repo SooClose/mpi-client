@@ -1,14 +1,15 @@
 #include "MPI Client.h"
 
 // Display packet as plaintext
-void DisplayFormattedPacket( DWORD nSize, LPBYTE lpData, HWND hwndDlg, int nIDDlgItem ) {
+void DisplayFormattedPacket( PACKET_INFO* lpPI, LPBYTE lpData, HWND hwndDlg, int nIDDlgItem ) {
   HWND   hwndList  = GetDlgItem( hwndDlg, nIDDlgItem );
   TCHAR  szBuf[16] = {0};
   LVITEM lvi       = {0};
+  DWORD  nSize     = lpPI -> cbData;
 
   lvi.mask   = LVIF_IMAGE;
   lvi.iItem  = ListView_GetItemCount( hwndList );
-  lvi.iImage = 1;
+  lvi.iImage = lpPI -> dwData;
   ListView_InsertItem( hwndList, &lvi );
 
   lvi.mask = LVIF_TEXT;
@@ -50,7 +51,7 @@ INT_PTR CALLBACK FormattedDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
       break;
     }
     case WM_NEWPACKET: {
-      DisplayFormattedPacket( wParam, ( LPBYTE )lParam, hwndDlg, IDC_FORMATTEDLIST );
+      DisplayFormattedPacket( ( PACKET_INFO* )wParam, ( LPBYTE )lParam, hwndDlg, IDC_FORMATTEDLIST );
       break;
     }
     case WM_IMAGELISTREADY: {
