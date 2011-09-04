@@ -14,10 +14,20 @@ HANDLE InjectDLL( DWORD dwPID, LPTSTR szDLLPath, HMODULE* lphInjected ) {
   
   // Injection
   LPVOID lpAddress = VirtualAllocEx( hProcess, NULL, cszDLL, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
+  if( lpAddress == NULL ) {
+    return NULL;
+  }
+
   WriteProcessMemory( hProcess, lpAddress, szDLLPath, cszDLL, NULL );
-  HANDLE hThread   = CreateRemoteThread( hProcess, NULL, NULL,
-                         (LPTHREAD_START_ROUTINE)( GetProcAddress( GetModuleHandle( _T("kernel32.dll") ),
-                         LOAD_LIB_NAME ) ), lpAddress, NULL, NULL );
+
+  HMODULE hMod = GetModuleHandle( _T("kernel32.dll") );
+  if( hMod == NULL ) {
+    return NULL;
+  }
+
+  HANDLE  hThread = CreateRemoteThread( hProcess, NULL, NULL,
+                        (LPTHREAD_START_ROUTINE)( GetProcAddress( hMod,
+                        LOAD_LIB_NAME ) ), lpAddress, NULL, NULL );
 
   // Locate address our payload was loaded
   if( hThread != 0 ) {
@@ -57,15 +67,15 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       // This is later used to share the image list.
       hwndPlain     = CreateDialogParam( GetModuleHandle( NULL ),
           MAKEINTRESOURCE( IDD_PLAIN ), hwndTab, PlainDialogProc, ( LPARAM )hwndDlg );
-      hwndFormatted = CreateDialog( GetModuleHandle( NULL ),
-          MAKEINTRESOURCE( IDD_FORMATTED ), hwndTab, FormattedDialogProc );
+      hwndFormatted = CreateDialogParam( GetModuleHandle( NULL ),
+          MAKEINTRESOURCE( IDD_FORMATTED ), hwndTab, FormattedDialogProc, ( LPARAM )hwndDlg );
 
       // Check payload exists at alleged location
       if( RegGetValue( HKEY_CURRENT_USER, REGPATH_SUBKEY, REGVAL_LOCATION,
           RRF_RT_REG_SZ, NULL, lpPath, &cbData ) == ERROR_SUCCESS ) {
         if( !PathFileExists( lpPath ) ) {
-          MessageBox( hwndDlg, _T("Payload does not exist at specified location. Exiting.."),
-              NULL, MB_OK | MB_ICONEXCLAMATION );
+          MessageBox( hwndDlg, _T("Payload does not exist at specified location"),
+              _T("Please restart MPI with valid settings"), MB_OK | MB_ICONEXCLAMATION );
           SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
           break;
         }
@@ -78,14 +88,21 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 
         // Inject payload
         if( ( hProcess = InjectDLL( lParam, lpPath, &hInjected ) ) == NULL ) {
-          MessageBox( hwndDlg, _T("Problem injecting payload. Exiting.."),
-              NULL, MB_OK | MB_ICONEXCLAMATION );
+          MessageBox( hwndDlg, _T("Payload injection failed"),
+              _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
           SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
           break;
         }
 
         // Load payload in our own virtual address space
         hLoaded = LoadLibrary( lpPath );
+        if( hLoaded == NULL ) {
+          MessageBox( hwndDlg, _T("Problem loading MPI payload into MPI client"),
+              _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION);
+          SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
+          break;
+        }
+
         lpFunc  = GetProcAddress( hLoaded, "Init" );
 
         // Calculate offset of exported function Init() from base
@@ -100,16 +117,16 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
         CloseHandle( hProcess );
 
         if( hThread == NULL ) {
-          MessageBox( hwndDlg, _T("Problem with initial communications. Exiting.."),
-              NULL, MB_OK | MB_ICONEXCLAMATION );
+          MessageBox( hwndDlg, _T("Problem with initial communications"),
+              _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
           SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
           break;
         } else {
           CloseHandle( hThread );
         }
       } else {
-        MessageBox( hwndDlg, _T("Problem reading payload location from registry. Exiting.."),
-            NULL, MB_OK | MB_ICONEXCLAMATION );
+        MessageBox( hwndDlg, _T("Problem reading payload location from registry"),
+            _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
         SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
         break;
       }
@@ -119,11 +136,18 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
     // Packet received in its raw form
     case WM_COPYDATA: {
       // Allocate memory locally and copy and return
-      // Before returning PostMessage WM_NEWPACKET
+      // Before returning, PostMessage WM_NEWPACKET
       COPYDATASTRUCT cds    = {0};
       DWORD          nSize  = ( ( PCOPYDATASTRUCT )lParam ) -> cbData;
       PVOID          lpData = malloc( nSize );
       PVOID          lpPI   = malloc( sizeof( PACKET_INFO ) );
+
+      if( lpData == NULL || lpPI == NULL ) {
+        MessageBox( hwndDlg, _T("Problem allocating memory for receiving packet"),
+            _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
+        SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
+        break;
+      }
 
       memcpy_s( lpData, nSize, ( ( PCOPYDATASTRUCT )lParam ) -> lpData, nSize );
       
@@ -135,6 +159,13 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
     // Send the received packet to the 2 different packet windows
     // Free allocated memory from above message
     case WM_NEWPACKET: {
+      if( hwndPlain == NULL || hwndFormatted == NULL ) {
+        MessageBox( hwndDlg, _T("Received packet before views have initialised"),
+            _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
+        SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
+        break;
+      }
+
       SendMessage( hwndPlain, WM_NEWPACKET, wParam, lParam );
       SendMessage( hwndFormatted, WM_NEWPACKET, wParam, lParam );
       free( ( PVOID )lParam );
@@ -168,6 +199,15 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       switch( ( ( NMHDR* )lParam ) -> code ) {
         // Switching tabs
         case TCN_SELCHANGE: {
+          if( hwndPlain == NULL || hwndFormatted == NULL ) {
+            MessageBox( hwndDlg,
+                _T("Interaction attempted with tabs before views have been initialised"),
+                _T("Exiting MPI :("),
+                MB_OK | MB_ICONEXCLAMATION );
+            SendMessage( hwndDlg, WM_CLOSE, NULL, NULL );
+            break;
+          }
+
           HWND hwndTab = GetDlgItem( hwndDlg, IDC_TAB );
 
           switch( nLastActiveTab ) {
@@ -200,8 +240,14 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
     }
     case WM_CLOSE: {
       // Give content tabs a chance to cleanup
-      SendMessage( hwndPlain, WM_CLOSE, 0, 0 );
-      SendMessage( hwndFormatted, WM_CLOSE, 0, 0 );
+      if( hwndPlain != NULL ) {
+        SendMessage( hwndPlain, WM_CLOSE, NULL, NULL );
+      }
+
+      if( hwndFormatted != NULL ) {
+        SendMessage( hwndFormatted, WM_CLOSE, NULL, NULL );
+      }
+
       EndDialog( hwndDlg, 0 );
       break;
     }
