@@ -1,7 +1,7 @@
 #include "MPI Client.h"
 
 // Display packet as plaintext
-void DisplayFormattedPacket( PACKET_INFO* lpPI, LPBYTE lpData, HWND hwndDlg, int nIDDlgItem ) {
+bool DisplayFormattedPacket( PACKET_INFO* lpPI, LPBYTE lpData, HWND hwndDlg, int nIDDlgItem ) {
   HWND   hwndList  = GetDlgItem( hwndDlg, nIDDlgItem );
   TCHAR  szBuf[16] = {0};
   LVITEM lvi       = {0};
@@ -19,30 +19,40 @@ void DisplayFormattedPacket( PACKET_INFO* lpPI, LPBYTE lpData, HWND hwndDlg, int
   ListView_SetItemText( hwndList, lvi.iItem, 2, szBuf );
 
   char* szNormalized = ( char* )malloc( ( nSize + 1 ) );
-  RtlZeroMemory( szNormalized, ( nSize + 1 ) );
-  memcpy_s( szNormalized, nSize + 1, lpData, nSize );
 
-  for( unsigned int i = 0; i < nSize; i++ ) {
-    if( !isprint( lpData [i] ) ) {
-      szNormalized[i] = '.';
+  if( szNormalized != NULL ) {
+    RtlZeroMemory( szNormalized, ( nSize + 1 ) );
+    memcpy_s( szNormalized, nSize + 1, lpData, nSize );
+
+    for( unsigned int i = 0; i < nSize; i++ ) {
+      if( !isprint( lpData [i] ) ) {
+        szNormalized[i] = '.';
+      }
     }
+
+    // Nasty conversion needed..
+    TCHAR* szBuffer = ( TCHAR* )malloc( ( nSize + 1 ) * sizeof( TCHAR ) );
+    RtlZeroMemory( szBuffer, ( nSize + 1 ) * sizeof( TCHAR ) );
+
+    MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, szNormalized, -1, szBuffer, nSize + 1 );
+
+    ListView_SetItemText( hwndList, lvi.iItem, 3, szBuffer );
+    free( szBuffer );
+    free( szNormalized );
+    return true;
+  } else {
+    return false;
   }
-
-  // Nasty conversion needed..
-  TCHAR* szBuffer = ( TCHAR* )malloc( ( nSize + 1 ) * sizeof( TCHAR ) );
-  RtlZeroMemory( szBuffer, ( nSize + 1 ) * sizeof( TCHAR ) );
-
-  MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, szNormalized, -1, szBuffer, nSize + 1 );
-
-  ListView_SetItemText( hwndList, lvi.iItem, 3, szBuffer );
-  free( szBuffer );
-  free( szNormalized );
 }
 
 // DialogProc for formatted tab
 INT_PTR CALLBACK FormattedDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
+  static HWND hwndParent;
+
   switch( uMsg ) {
     case WM_INITDIALOG: {
+      hwndParent = (HWND)lParam;
+
       EnableThemeDialogTexture( hwndDlg, ETDT_ENABLETAB );
       DWORD dwStyle = SendMessage( GetDlgItem( hwndDlg, IDC_FORMATTEDLIST ), LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0 );
       SendMessage( GetDlgItem( hwndDlg, IDC_FORMATTEDLIST ), LVM_SETEXTENDEDLISTVIEWSTYLE, 0, dwStyle | LVS_EX_FULLROWSELECT );
@@ -51,7 +61,12 @@ INT_PTR CALLBACK FormattedDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
       break;
     }
     case WM_NEWPACKET: {
-      DisplayFormattedPacket( ( PACKET_INFO* )wParam, ( LPBYTE )lParam, hwndDlg, IDC_FORMATTEDLIST );
+      if( !DisplayFormattedPacket( ( PACKET_INFO* )wParam, ( LPBYTE )lParam, hwndDlg, IDC_FORMATTEDLIST ) ) {
+        MessageBox( hwndParent, _T("Failed to display formatted packet"),
+            _T("Exiting MPI"), MB_OK | MB_ICONEXCLAMATION );
+        SendMessage( hwndParent, WM_CLOSE, NULL, NULL );
+        break;
+      }
       break;
     }
     case WM_IMAGELISTREADY: {

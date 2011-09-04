@@ -1,7 +1,7 @@
 #include "MPI Client.h"
 
 // Display packets as hex
-void DisplayPacket( PACKET_INFO* lpPI, PVOID lpData, HWND hwndDlg, int nIDDlgItem ) {
+bool DisplayPacket( PACKET_INFO* lpPI, PVOID lpData, HWND hwndDlg, int nIDDlgItem ) {
   HWND   hwndList  = GetDlgItem( hwndDlg, nIDDlgItem );
   TCHAR  szBuf[16] = {0};
   LVITEM lvi       = {0};
@@ -19,21 +19,31 @@ void DisplayPacket( PACKET_INFO* lpPI, PVOID lpData, HWND hwndDlg, int nIDDlgIte
   ListView_SetItemText( hwndList, lvi.iItem, 2, szBuf );
 
   TCHAR* szBuffer = ( TCHAR* )malloc( ( 3 * nSize + 1 ) * sizeof( TCHAR ) );
-  RtlZeroMemory( szBuffer, ( 3 * nSize + 1 ) * sizeof( TCHAR ) );
 
-  for( unsigned int i = 0; i < nSize; i++ ) {
-    _stprintf_s( &szBuffer[i*3], 3, _T("%02X"), ( ( const byte* )lpData )[i] );
-    szBuffer[ ( i + 1 )*3 - 1 ] = *_T(" ");
+  if( szBuffer != NULL ) {
+    RtlZeroMemory( szBuffer, ( 3 * nSize + 1 ) * sizeof( TCHAR ) );
+
+    for( unsigned int i = 0; i < nSize; i++ ) {
+      _stprintf_s( &szBuffer[i*3], 3, _T("%02X"), ( ( const byte* )lpData )[i] );
+      szBuffer[ ( i + 1 )*3 - 1 ] = *_T(" ");
+    }
+
+    ListView_SetItemText( hwndList, lvi.iItem, 3, szBuffer );
+    free( szBuffer );
+    return true;
+  } else {
+    return false;
   }
-
-  ListView_SetItemText( hwndList, lvi.iItem, 3, szBuffer );
-  free( szBuffer );
 }
 
 // DialogProc for plain tab
 INT_PTR CALLBACK PlainDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
+  static HWND hwndParent;
+
   switch( uMsg ) {
     case WM_INITDIALOG: {
+      hwndParent = (HWND)lParam;
+
       EnableThemeDialogTexture( hwndDlg, ETDT_ENABLETAB );
       DWORD dwStyle = SendMessage( GetDlgItem( hwndDlg, IDC_PLAINLIST ), LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0 );
       SendMessage( GetDlgItem( hwndDlg, IDC_PLAINLIST ), LVM_SETEXTENDEDLISTVIEWSTYLE, 0, dwStyle | LVS_EX_FULLROWSELECT );
@@ -50,11 +60,15 @@ INT_PTR CALLBACK PlainDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
       ImageList_Add( hIML, hbmArrows, NULL );
       DeleteObject( hbmArrows );
 
-      SendMessage( ( HWND )lParam, WM_IMAGELISTREADY, ( WPARAM )hIML, NULL );
+      SendMessage( hwndParent, WM_IMAGELISTREADY, ( WPARAM )hIML, NULL );
       break;
     }
     case WM_NEWPACKET: {
-      DisplayPacket( ( PACKET_INFO* )wParam, ( PVOID )lParam, hwndDlg, IDC_PLAINLIST );
+      if( !DisplayPacket( ( PACKET_INFO* )wParam, ( PVOID )lParam, hwndDlg, IDC_PLAINLIST ) ) {
+        MessageBox( hwndParent, _T("Failed to display plain packet"),
+            _T("Exiting MPI"), MB_OK | MB_ICONEXCLAMATION );
+        SendMessage( hwndParent, WM_CLOSE, NULL, NULL );
+      }
       break;
     }
     case WM_IMAGELISTREADY: {
