@@ -15,22 +15,22 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MPI Client.cpp">
+    <ClCompile Include="MPI Client.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Injector.cpp">
+    <ClCompile Include="MPI.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MPI.cpp">
+    <ClCompile Include="Injector.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Plain.cpp">
+    <ClCompile Include="Formatted.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Formatted.cpp">
+    <ClCompile Include="Common.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Common.cpp">
+    <ClCompile Include="Plain.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

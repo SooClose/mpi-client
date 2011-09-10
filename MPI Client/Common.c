@@ -3,12 +3,13 @@
 void InitPacketList( HWND hwndDlg, int nIDDlgItem ) {
   HWND     hwndList = GetDlgItem( hwndDlg, nIDDlgItem );
   LVCOLUMN lvc      = {0};
+  int      iCol;
 
   lvc.cx   = 20;
   lvc.fmt  = LVCFMT_LEFT;
   lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 
-  for( int iCol = 0; iCol < 4; iCol++ ) {
+  for( iCol = 0; iCol < 4; iCol++ ) {
     lvc.iSubItem = iCol;
 
     switch( iCol ) {
