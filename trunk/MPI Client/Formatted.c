@@ -15,9 +15,9 @@ BOOL DisplayFormattedPacket( PACKET_INFO* lpPI, LPBYTE lpData, HWND hwndDlg, int
   ListView_InsertItem( hwndList, &lvi );
 
   lvi.mask = LVIF_TEXT;
-  _stprintf_s( szBuf, _countof( szBuf ), _T("%d"), lvi.iItem + 1 );
+  swprintf_s( szBuf, _countof( szBuf ), L"%d", lvi.iItem + 1 );
   ListView_SetItemText( hwndList, lvi.iItem, 1, szBuf );
-  _stprintf_s( szBuf, _countof( szBuf ), _T("%d"), nSize );
+  swprintf_s( szBuf, _countof( szBuf ), L"%d", nSize );
   ListView_SetItemText( hwndList, lvi.iItem, 2, szBuf );
   
   szNormalized = malloc( ( nSize + 1 ) );
@@ -67,8 +67,8 @@ INT_PTR CALLBACK FormattedDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
     }
     case WM_NEWPACKET: {
       if( !DisplayFormattedPacket( ( PACKET_INFO* )wParam, ( LPBYTE )lParam, hwndDlg, IDC_FORMATTEDLIST ) ) {
-        MessageBox( hwndParent, _T("Failed to display formatted packet"),
-            _T("Exiting MPI"), MB_OK | MB_ICONEXCLAMATION );
+        MessageBox( hwndParent, L"Failed to display formatted packet",
+            L"Exiting MPI", MB_OK | MB_ICONEXCLAMATION );
         SendMessage( hwndParent, WM_CLOSE, 0, 0 );
         break;
       }

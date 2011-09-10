@@ -6,11 +6,11 @@ BOOL SetPath( HWND hwndDlg, LPTSTR lpPath, DWORD nMaxFile ) {
 
   ofn.lStructSize = sizeof ofn;
   ofn.hwndOwner   = hwndDlg;
-  ofn.lpstrFilter = _T("MPI Payload DLL\0*.dll\0\0");
+  ofn.lpstrFilter = L"MPI Payload DLL\0*.dll\0\0";
   ofn.hInstance   = GetModuleHandle( NULL );
   ofn.lpstrFile   = lpPath;
   ofn.nMaxFile    = nMaxFile;
-  ofn.lpstrTitle  = _T("Select MPI Payload");
+  ofn.lpstrTitle  = L"Select MPI Payload";
   ofn.Flags       = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_HIDEREADONLY;
 
   return GetOpenFileName( &ofn );
@@ -24,7 +24,7 @@ void InitProcessList( HWND hwndList ) {
 
   for( iCol = 0; iCol < 2; iCol++ ) {
     lvc.iSubItem = iCol;
-    lvc.pszText  = iCol ? _T("PID") : _T("Process Name");
+    lvc.pszText  = iCol ? L"PID" : L"Process Name";
     lvc.cx       = 150;
     lvc.fmt      = LVCFMT_LEFT;
     ListView_InsertColumn( hwndList, iCol, &lvc );
@@ -52,7 +52,7 @@ void FillProcessList( HWND hwndList ) {
 
   do {
     lvI.iItem = iIndex + 1;
-    _ultot_s( ProcessStruct.th32ProcessID, lpStr, _countof( lpStr ), 10 );
+    _ultow_s( ProcessStruct.th32ProcessID, lpStr, _countof( lpStr ), 10 );
 
     lvI.lParam = ProcessStruct.th32ProcessID;
     iIndex = ListView_InsertItem( hwndList, &lvI );
@@ -97,19 +97,19 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
             if( RegCreateKeyEx( HKEY_CURRENT_USER, REGPATH_SUBKEY, 0, NULL,
                 REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, NULL ) == ERROR_SUCCESS ) {
               if( RegSetValueEx( hkResult, REGVAL_LOCATION, 0, REG_SZ,
-                  ( const BYTE* )lpPath, ( _tcsclen( lpPath ) + 1 ) * sizeof( TCHAR ) ) != ERROR_SUCCESS ) {
-                MessageBox( hwndDlg, _T("Problem setting registry entry for payload location"),
+                  ( const BYTE* )lpPath, ( wcslen( lpPath ) + 1 ) * sizeof( TCHAR ) ) != ERROR_SUCCESS ) {
+                MessageBox( hwndDlg, L"Problem setting registry entry for payload location",
                     NULL, MB_OK | MB_ICONEXCLAMATION );
               } else {
                 SetDlgItemText( hwndDlg, IDC_DLLPATH, lpPath );
               }
 
               if( RegCloseKey( hkResult ) != ERROR_SUCCESS ) {
-                MessageBox( hwndDlg, _T("Problem closing registry handle \
-                    during setting of payload location"), NULL, MB_OK | MB_ICONEXCLAMATION );
+                MessageBox( hwndDlg, L"Problem closing registry handle \
+                    during setting of payload location", NULL, MB_OK | MB_ICONEXCLAMATION );
               }
             } else {
-              MessageBox( hwndDlg, _T("Problem creating registry entry for payload location"),
+              MessageBox( hwndDlg, L"Problem creating registry entry for payload location",
                   NULL, MB_OK | MB_ICONEXCLAMATION );
             }
           }
@@ -130,7 +130,7 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
         TCHAR szPID[64] = {0};
 
         if( Edit_GetTextLength( GetDlgItem( hwndDlg, IDC_DLLPATH ) ) == 0 ) {
-          MessageBox( hwndDlg, _T("No payload specified"), NULL, MB_OK | MB_ICONEXCLAMATION );
+          MessageBox( hwndDlg, L"No payload specified", NULL, MB_OK | MB_ICONEXCLAMATION );
           SendMessage( hwndDlg, WM_COMMAND, MAKEWPARAM( IDC_BROWSE, NULL ), 0 );
           break;
         }
@@ -140,7 +140,7 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 
         if( nIndex != -1 ) {
           ListView_GetItemText( hwndList, nIndex, 1, szPID, _countof( szPID ) );
-          EndDialog( hwndDlg, _tstol( szPID ) );
+          EndDialog( hwndDlg, _wtol( szPID ) );
         }
       } else {
         return FALSE;

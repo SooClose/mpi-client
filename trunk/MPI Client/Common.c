@@ -14,17 +14,17 @@ void InitPacketList( HWND hwndDlg, int nIDDlgItem ) {
 
     switch( iCol ) {
       case 0:
-        lvc.pszText = _T("");
+        lvc.pszText = L"";
         break;
       case 1:
         lvc.cx      = 50;
-        lvc.pszText = _T("ID");
+        lvc.pszText = L"ID";
         break;
       case 2:
-        lvc.pszText = _T("Size");
+        lvc.pszText = L"Size";
         break;
       case 3:
-        lvc.pszText = _T("Data");
+        lvc.pszText = L"Data";
         break;
     }
 

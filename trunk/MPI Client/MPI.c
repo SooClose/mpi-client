@@ -1,7 +1,7 @@
 #include "MPI Client.h"
 
 // returns open process handle
-HANDLE InjectDLL( DWORD dwPID, LPTSTR szDLLPath, HMODULE* lphInjected ) {
+HANDLE InjectDLL( DWORD dwPID, LPCTSTR szDLLPath, HMODULE* lphInjected ) {
   int     cszDLL;
   LPVOID  lpAddress;
   HMODULE hMod;
@@ -14,7 +14,7 @@ HANDLE InjectDLL( DWORD dwPID, LPTSTR szDLLPath, HMODULE* lphInjected ) {
     return NULL;
   }
 
-  cszDLL = ( _tcslen( szDLLPath ) + 1 ) * sizeof( TCHAR );
+  cszDLL = ( wcslen( szDLLPath ) + 1 ) * sizeof( TCHAR );
   
   // Injection
   lpAddress = VirtualAllocEx( hProcess, NULL, cszDLL, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
@@ -24,14 +24,14 @@ HANDLE InjectDLL( DWORD dwPID, LPTSTR szDLLPath, HMODULE* lphInjected ) {
 
   WriteProcessMemory( hProcess, lpAddress, szDLLPath, cszDLL, NULL );
 
-  hMod = GetModuleHandle( _T("kernel32.dll") );
+  hMod = GetModuleHandle( L"kernel32.dll" );
   if( hMod == NULL ) {
     return NULL;
   }
 
   hThread = CreateRemoteThread( hProcess, NULL, 0,
                         (LPTHREAD_START_ROUTINE)( GetProcAddress( hMod,
-                        LOAD_LIB_NAME ) ), lpAddress, 0, NULL );
+                        "LoadLibraryW" ) ), lpAddress, 0, NULL );
 
   // Locate address our payload was loaded
   if( hThread != 0 ) {
@@ -61,10 +61,10 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 
       // Add tabs
       tci.mask    = TCIF_TEXT;
-      tci.pszText = _T("Plain Log");
+      tci.pszText = L"Plain Log";
       TabCtrl_InsertItem( hwndTab, 0, &tci );
 
-      tci.pszText = _T("Formatted Log");
+      tci.pszText = L"Formatted Log";
       TabCtrl_InsertItem( hwndTab, 1, &tci );
 
       // Add tab contents. Also pass in parent window ( this ) as lParam.
@@ -85,16 +85,16 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
         DWORD   dwOffset  = 0;
 
         if( !PathFileExists( lpPath ) ) {
-          MessageBox( hwndDlg, _T("Payload does not exist at specified location"),
-              _T("Please restart MPI with valid settings"), MB_OK | MB_ICONEXCLAMATION );
+          MessageBox( hwndDlg, L"Payload does not exist at specified location",
+              L"Please restart MPI with valid settings", MB_OK | MB_ICONEXCLAMATION );
           SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
           break;
         }
 
         // Inject payload
         if( ( hProcess = InjectDLL( lParam, lpPath, &hInjected ) ) == NULL ) {
-          MessageBox( hwndDlg, _T("Payload injection failed"),
-              _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
+          MessageBox( hwndDlg, L"Payload injection failed",
+              L"Exiting MPI :(", MB_OK | MB_ICONEXCLAMATION );
           SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
           break;
         }
@@ -102,8 +102,8 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
         // Load payload in our own virtual address space
         hLoaded = LoadLibrary( lpPath );
         if( hLoaded == NULL ) {
-          MessageBox( hwndDlg, _T("Problem loading MPI payload into MPI client"),
-              _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION);
+          MessageBox( hwndDlg, L"Problem loading MPI payload into MPI client",
+              L"Exiting MPI :(", MB_OK | MB_ICONEXCLAMATION);
           SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
           break;
         }
@@ -122,16 +122,16 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
         CloseHandle( hProcess );
 
         if( hThread == NULL ) {
-          MessageBox( hwndDlg, _T("Problem with initial communications"),
-              _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
+          MessageBox( hwndDlg, L"Problem with initial communications",
+              L"Exiting MPI :(", MB_OK | MB_ICONEXCLAMATION );
           SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
           break;
         } else {
           CloseHandle( hThread );
         }
       } else {
-        MessageBox( hwndDlg, _T("Problem reading payload location from registry"),
-            _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
+        MessageBox( hwndDlg, L"Problem reading payload location from registry",
+            L"Exiting MPI :(", MB_OK | MB_ICONEXCLAMATION );
         SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
         break;
       }
@@ -148,8 +148,8 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       PVOID          lpPI   = malloc( sizeof( PACKET_INFO ) );
 
       if( lpData == NULL || lpPI == NULL ) {
-        MessageBox( hwndDlg, _T("Problem allocating memory for receiving packet"),
-            _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
+        MessageBox( hwndDlg, L"Problem allocating memory for receiving packet",
+            L"Exiting MPI :(", MB_OK | MB_ICONEXCLAMATION );
         SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
         break;
       }
@@ -165,8 +165,8 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
     // Free allocated memory from above message
     case WM_NEWPACKET: {
       if( hwndPlain == NULL || hwndFormatted == NULL ) {
-        MessageBox( hwndDlg, _T("Received packet before views have initialised"),
-            _T("Exiting MPI :("), MB_OK | MB_ICONEXCLAMATION );
+        MessageBox( hwndDlg, L"Received packet before views have initialised",
+            L"Exiting MPI :(", MB_OK | MB_ICONEXCLAMATION );
         SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
         break;
       }
@@ -208,8 +208,8 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 
           if( hwndPlain == NULL || hwndFormatted == NULL ) {
             MessageBox( hwndDlg,
-                _T("Interaction attempted with tabs before views have been initialised"),
-                _T("Exiting MPI :("),
+                L"Interaction attempted with tabs before views have been initialised",
+                L"Exiting MPI :(",
                 MB_OK | MB_ICONEXCLAMATION );
             SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
             break;
