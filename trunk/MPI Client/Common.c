@@ -1,9 +1,9 @@
 #include "MPI Client.h"
 
 void InitPacketList( HWND hwndDlg, int nIDDlgItem ) {
-  HWND     hwndList = GetDlgItem( hwndDlg, nIDDlgItem );
-  LVCOLUMN lvc      = {0};
-  int      iCol;
+  HWND         hwndList = GetDlgItem( hwndDlg, nIDDlgItem );
+  LVCOLUMN     lvc      = {0};
+  unsigned int iCol;
 
   lvc.cx   = 20;
   lvc.fmt  = LVCFMT_LEFT;
