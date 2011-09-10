@@ -14,9 +14,9 @@ BOOL DisplayPacket( PACKET_INFO* lpPI, PVOID lpData, HWND hwndDlg, int nIDDlgIte
   ListView_InsertItem( hwndList, &lvi );
 
   lvi.mask = LVIF_TEXT;
-  _stprintf_s( szBuf, _countof( szBuf ), _T("%d"), lvi.iItem + 1 );
+  swprintf_s( szBuf, _countof( szBuf ), L"%d", lvi.iItem + 1 );
   ListView_SetItemText( hwndList, lvi.iItem, 1, szBuf );
-  _stprintf_s( szBuf, _countof( szBuf ), _T("%d"), nSize );
+  swprintf_s( szBuf, _countof( szBuf ), L"%d", nSize );
   ListView_SetItemText( hwndList, lvi.iItem, 2, szBuf );
 
   szBuffer = malloc( ( 3 * nSize + 1 ) * sizeof( TCHAR ) );
@@ -26,8 +26,8 @@ BOOL DisplayPacket( PACKET_INFO* lpPI, PVOID lpData, HWND hwndDlg, int nIDDlgIte
     RtlZeroMemory( szBuffer, ( 3 * nSize + 1 ) * sizeof( TCHAR ) );
 
     for( i = 0; i < nSize; i++ ) {
-      _stprintf_s( &szBuffer[i*3], 3, _T("%02X"), ( ( const byte* )lpData )[i] );
-      szBuffer[ ( i + 1 )*3 - 1 ] = *_T(" ");
+      swprintf_s( &szBuffer[i*3], 3, L"%02X", ( ( const byte* )lpData )[i] );
+      szBuffer[ ( i + 1 )*3 - 1 ] = *L" ";
     }
 
     ListView_SetItemText( hwndList, lvi.iItem, 3, szBuffer );
@@ -73,8 +73,8 @@ INT_PTR CALLBACK PlainDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
     }
     case WM_NEWPACKET: {
       if( !DisplayPacket( ( PACKET_INFO* )wParam, ( PVOID )lParam, hwndDlg, IDC_PLAINLIST ) ) {
-        MessageBox( hwndParent, _T("Failed to display plain packet"),
-            _T("Exiting MPI"), MB_OK | MB_ICONEXCLAMATION );
+        MessageBox( hwndParent, L"Failed to display plain packet",
+            L"Exiting MPI", MB_OK | MB_ICONEXCLAMATION );
         SendMessage( hwndParent, WM_CLOSE, 0, 0);
       }
       break;

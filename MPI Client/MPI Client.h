@@ -3,7 +3,7 @@
 
 #include <Windows.h>
 #include <WindowsX.h>
-#include <tchar.h>
+#include <stdio.h>
 #include <Shlwapi.h>
 #pragma comment(lib, "Shlwapi.lib")
 #include <CommCtrl.h>
@@ -17,14 +17,8 @@
     name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
     processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-#ifdef  UNICODE
-#define LOAD_LIB_NAME "LoadLibraryW"
-#else
-#define LOAD_LIB_NAME "LoadLibraryA"
-#endif
-
-#define REGPATH_SUBKEY  _T("Software\\MPI")
-#define REGVAL_LOCATION _T("Payload Location")
+#define REGPATH_SUBKEY  L"Software\\MPI"
+#define REGVAL_LOCATION L"Payload Location"
 
 #define WM_NEWPACKET      WM_APP + 100 // wParam = lpPacketInfo, lParam = lpData
 #define WM_IMAGELISTREADY WM_APP + 101 // wParam = hImageList
