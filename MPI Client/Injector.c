@@ -1,7 +1,7 @@
 #include "MPI Client.h"
 
 // Open dialog for payload selection
-BOOL SetPath( HWND hwndDlg, LPTSTR lpPath, DWORD nMaxFile ) {
+BOOL SetPath( HWND hwndDlg, LPWSTR lpPath, DWORD nMaxFile ) {
   OPENFILENAME ofn = {0};
 
   ofn.lStructSize = sizeof ofn;
@@ -37,7 +37,7 @@ void InitProcessList( HWND hwndList ) {
 void FillProcessList( HWND hwndList ) {
   LVITEM         lvI           = {0};
   PROCESSENTRY32 ProcessStruct = {0};
-  TCHAR          lpStr[16]     = {0};
+  WCHAR          lpStr[16]     = {0};
   int            iIndex        = 0;
   HANDLE         hSnapshot     = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
 
@@ -56,7 +56,7 @@ void FillProcessList( HWND hwndList ) {
 
     lvI.lParam = ProcessStruct.th32ProcessID;
     iIndex = ListView_InsertItem( hwndList, &lvI );
-    ListView_SetItemText( hwndList, iIndex, 0, (LPTSTR)&ProcessStruct.szExeFile );
+    ListView_SetItemText( hwndList, iIndex, 0, (LPWSTR)&ProcessStruct.szExeFile );
     ListView_SetItemText( hwndList, iIndex, 1, lpStr );
   }
   while( Process32Next( hSnapshot, &ProcessStruct ) );
@@ -69,7 +69,7 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
   switch( uMsg ) {
     case WM_INITDIALOG: {
       DWORD dwStyle;
-      TCHAR lpPath[MAX_PATH] = {0};
+      WCHAR lpPath[MAX_PATH] = {0};
       DWORD cbData           = sizeof( lpPath );
       HWND  hwndList = GetDlgItem( hwndDlg, IDC_PROCESSLIST );
       InitProcessList( hwndList );
@@ -89,7 +89,7 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
     case WM_COMMAND: {
       switch( LOWORD( wParam ) ) {
         case IDC_BROWSE: {
-          TCHAR lpPath[MAX_PATH] = {0};
+          WCHAR lpPath[MAX_PATH] = {0};
           HKEY  hkResult         = NULL;
 
           // Open selection dialogue and set registry
@@ -97,7 +97,7 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
             if( RegCreateKeyEx( HKEY_CURRENT_USER, REGPATH_SUBKEY, 0, NULL,
                 REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, NULL ) == ERROR_SUCCESS ) {
               if( RegSetValueEx( hkResult, REGVAL_LOCATION, 0, REG_SZ,
-                  ( const BYTE* )lpPath, ( wcslen( lpPath ) + 1 ) * sizeof( TCHAR ) ) != ERROR_SUCCESS ) {
+                  ( const BYTE* )lpPath, ( wcslen( lpPath ) + 1 ) * sizeof( WCHAR ) ) != ERROR_SUCCESS ) {
                 MessageBox( hwndDlg, L"Problem setting registry entry for payload location",
                     NULL, MB_OK | MB_ICONEXCLAMATION );
               } else {
@@ -127,7 +127,7 @@ INT_PTR CALLBACK InjectorProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
           ( ( ( LPNMHDR )lParam ) -> code == NM_DBLCLK ) ) {
         HWND  hwndList;
         int   nIndex;
-        TCHAR szPID[64] = {0};
+        WCHAR szPID[64] = {0};
 
         if( Edit_GetTextLength( GetDlgItem( hwndDlg, IDC_DLLPATH ) ) == 0 ) {
           MessageBox( hwndDlg, L"No payload specified", NULL, MB_OK | MB_ICONEXCLAMATION );

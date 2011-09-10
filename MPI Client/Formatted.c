@@ -3,11 +3,11 @@
 // Display packet as plaintext
 BOOL DisplayFormattedPacket( PACKET_INFO* lpPI, LPBYTE lpData, HWND hwndDlg, int nIDDlgItem ) {
   HWND   hwndList  = GetDlgItem( hwndDlg, nIDDlgItem );
-  TCHAR  szBuf[16] = {0};
+  WCHAR  szBuf[16] = {0};
   LVITEM lvi       = {0};
   DWORD  nSize     = lpPI -> cbData;
   char*  szNormalized;
-  TCHAR* szBuffer;
+  WCHAR* szBuffer;
 
   lvi.mask   = LVIF_IMAGE;
   lvi.iItem  = ListView_GetItemCount( hwndList );
@@ -35,8 +35,8 @@ BOOL DisplayFormattedPacket( PACKET_INFO* lpPI, LPBYTE lpData, HWND hwndDlg, int
     }
 
     // Nasty conversion needed..
-    szBuffer = malloc( ( nSize + 1 ) * sizeof( TCHAR ) );
-    RtlZeroMemory( szBuffer, ( nSize + 1 ) * sizeof( TCHAR ) );
+    szBuffer = malloc( ( nSize + 1 ) * sizeof( WCHAR ) );
+    RtlZeroMemory( szBuffer, ( nSize + 1 ) * sizeof( WCHAR ) );
 
     MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, szNormalized, -1, szBuffer, nSize + 1 );
 

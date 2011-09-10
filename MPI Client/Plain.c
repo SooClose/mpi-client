@@ -3,10 +3,10 @@
 // Display packets as hex
 BOOL DisplayPacket( PACKET_INFO* lpPI, PVOID lpData, HWND hwndDlg, int nIDDlgItem ) {
   HWND   hwndList  = GetDlgItem( hwndDlg, nIDDlgItem );
-  TCHAR  szBuf[16] = {0};
+  WCHAR  szBuf[16] = {0};
   LVITEM lvi       = {0};
   DWORD  nSize     = lpPI -> cbData;
-  TCHAR* szBuffer;
+  WCHAR* szBuffer;
 
   lvi.mask   = LVIF_IMAGE;
   lvi.iItem  = ListView_GetItemCount( hwndList );
@@ -19,11 +19,11 @@ BOOL DisplayPacket( PACKET_INFO* lpPI, PVOID lpData, HWND hwndDlg, int nIDDlgIte
   swprintf_s( szBuf, _countof( szBuf ), L"%d", nSize );
   ListView_SetItemText( hwndList, lvi.iItem, 2, szBuf );
 
-  szBuffer = malloc( ( 3 * nSize + 1 ) * sizeof( TCHAR ) );
+  szBuffer = malloc( ( 3 * nSize + 1 ) * sizeof( WCHAR ) );
 
   if( szBuffer != NULL ) {
     unsigned int i;
-    RtlZeroMemory( szBuffer, ( 3 * nSize + 1 ) * sizeof( TCHAR ) );
+    RtlZeroMemory( szBuffer, ( 3 * nSize + 1 ) * sizeof( WCHAR ) );
 
     for( i = 0; i < nSize; i++ ) {
       swprintf_s( &szBuffer[i*3], 3, L"%02X", ( ( const byte* )lpData )[i] );
