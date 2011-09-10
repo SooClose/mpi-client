@@ -74,12 +74,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Common.cpp" />
-    <ClCompile Include="Formatted.cpp" />
-    <ClCompile Include="Injector.cpp" />
-    <ClCompile Include="MPI Client.cpp" />
-    <ClCompile Include="MPI.cpp" />
-    <ClCompile Include="Plain.cpp" />
+    <ClCompile Include="Common.c" />
+    <ClCompile Include="Formatted.c" />
+    <ClCompile Include="Injector.c" />
+    <ClCompile Include="MPI Client.c" />
+    <ClCompile Include="MPI.c" />
+    <ClCompile Include="Plain.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MPI Client.h" />

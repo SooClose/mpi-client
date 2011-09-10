@@ -2,7 +2,11 @@
 
 // returns open process handle
 HANDLE InjectDLL( DWORD dwPID, LPTSTR szDLLPath, HMODULE* lphInjected ) {
-  HANDLE hProcess = OpenProcess( PROCESS_CREATE_THREAD | 
+  int     cszDLL;
+  LPVOID  lpAddress;
+  HMODULE hMod;
+  HANDLE  hThread;
+  HANDLE  hProcess = OpenProcess( PROCESS_CREATE_THREAD | 
                  PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION |
                  PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, dwPID );
 
@@ -10,30 +14,30 @@ HANDLE InjectDLL( DWORD dwPID, LPTSTR szDLLPath, HMODULE* lphInjected ) {
     return NULL;
   }
 
-  int cszDLL = ( _tcslen( szDLLPath ) + 1 ) * sizeof TCHAR;
+  cszDLL = ( _tcslen( szDLLPath ) + 1 ) * sizeof( TCHAR );
   
   // Injection
-  LPVOID lpAddress = VirtualAllocEx( hProcess, NULL, cszDLL, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
+  lpAddress = VirtualAllocEx( hProcess, NULL, cszDLL, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
   if( lpAddress == NULL ) {
     return NULL;
   }
 
   WriteProcessMemory( hProcess, lpAddress, szDLLPath, cszDLL, NULL );
 
-  HMODULE hMod = GetModuleHandle( _T("kernel32.dll") );
+  hMod = GetModuleHandle( _T("kernel32.dll") );
   if( hMod == NULL ) {
     return NULL;
   }
 
-  HANDLE  hThread = CreateRemoteThread( hProcess, NULL, NULL,
+  hThread = CreateRemoteThread( hProcess, NULL, 0,
                         (LPTHREAD_START_ROUTINE)( GetProcAddress( hMod,
-                        LOAD_LIB_NAME ) ), lpAddress, NULL, NULL );
+                        LOAD_LIB_NAME ) ), lpAddress, 0, NULL );
 
   // Locate address our payload was loaded
   if( hThread != 0 ) {
     WaitForSingleObject( hThread, INFINITE );
     GetExitCodeThread( hThread, ( LPDWORD )lphInjected );
-    VirtualFreeEx( hProcess, lpAddress, NULL, MEM_RELEASE );
+    VirtualFreeEx( hProcess, lpAddress, 0, MEM_RELEASE );
     CloseHandle( hThread );
   }
 
@@ -73,18 +77,19 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       // Check payload exists at alleged location
       if( RegGetValue( HKEY_CURRENT_USER, REGPATH_SUBKEY, REGVAL_LOCATION,
           RRF_RT_REG_SZ, NULL, lpPath, &cbData ) == ERROR_SUCCESS ) {
+        HANDLE  hProcess  = NULL;
+        HANDLE  hThread   = NULL;
+        HMODULE hLoaded   = NULL;
+        HMODULE hInjected = NULL;
+        FARPROC lpFunc    = NULL;
+        DWORD   dwOffset  = 0;
+
         if( !PathFileExists( lpPath ) ) {
           MessageBox( hwndDlg, _T("Payload does not exist at specified location"),
               _T("Please restart MPI with valid settings"), MB_OK | MB_ICONEXCLAMATION );
           SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
           break;
         }
-
-        HANDLE  hProcess  = NULL;
-        HMODULE hLoaded   = NULL;
-        HMODULE hInjected = NULL;
-        FARPROC lpFunc    = NULL;
-        DWORD   dwOffset  = 0;
 
         // Inject payload
         if( ( hProcess = InjectDLL( lParam, lpPath, &hInjected ) ) == NULL ) {
@@ -110,9 +115,9 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
         FreeLibrary( hLoaded );
 
         // Use this offset to calculate VA for Init() in target and invoke it
-        HANDLE hThread = CreateRemoteThread( hProcess, NULL, NULL,
+        hThread = CreateRemoteThread( hProcess, NULL, 0,
             ( LPTHREAD_START_ROUTINE )( dwOffset + ( DWORD )hInjected ),
-            hwndDlg, NULL, NULL );
+            hwndDlg, 0, NULL );
 
         CloseHandle( hProcess );
 
@@ -178,7 +183,7 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
           SendMessage( hwndDlg, WM_IMAGELISTREADY, ( WPARAM )hImageList, 0 );
           break;
         default:
-          return false;
+          return FALSE;
       }
       break;
     }
@@ -199,16 +204,16 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       switch( ( ( NMHDR* )lParam ) -> code ) {
         // Switching tabs
         case TCN_SELCHANGE: {
+          HWND hwndTab = GetDlgItem( hwndDlg, IDC_TAB );
+
           if( hwndPlain == NULL || hwndFormatted == NULL ) {
             MessageBox( hwndDlg,
                 _T("Interaction attempted with tabs before views have been initialised"),
                 _T("Exiting MPI :("),
                 MB_OK | MB_ICONEXCLAMATION );
-            SendMessage( hwndDlg, WM_CLOSE, NULL, NULL );
+            SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
             break;
           }
-
-          HWND hwndTab = GetDlgItem( hwndDlg, IDC_TAB );
 
           switch( nLastActiveTab ) {
             case 0:
@@ -233,7 +238,7 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
           break;
         }
         default:
-          return false;
+          return FALSE;
       }
 
       break;
@@ -241,19 +246,19 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
     case WM_CLOSE: {
       // Give content tabs a chance to cleanup
       if( hwndPlain != NULL ) {
-        SendMessage( hwndPlain, WM_CLOSE, NULL, NULL );
+        SendMessage( hwndPlain, WM_CLOSE, 0, 0 );
       }
 
       if( hwndFormatted != NULL ) {
-        SendMessage( hwndFormatted, WM_CLOSE, NULL, NULL );
+        SendMessage( hwndFormatted, WM_CLOSE, 0, 0 );
       }
 
       EndDialog( hwndDlg, 0 );
       break;
     }
     default:
-      return false;
+      return FALSE;
   }
 
-  return true;
+  return TRUE;
 }
