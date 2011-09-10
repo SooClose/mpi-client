@@ -1,7 +1,7 @@
 #include "MPI Client.h"
 
 // returns open process handle
-HANDLE InjectDLL( DWORD dwPID, LPCTSTR szDLLPath, HMODULE* lphInjected ) {
+HANDLE InjectDLL( DWORD dwPID, LPCWSTR szDLLPath, HMODULE* lphInjected ) {
   int     cszDLL;
   LPVOID  lpAddress;
   HMODULE hMod;
@@ -14,7 +14,7 @@ HANDLE InjectDLL( DWORD dwPID, LPCTSTR szDLLPath, HMODULE* lphInjected ) {
     return NULL;
   }
 
-  cszDLL = ( wcslen( szDLLPath ) + 1 ) * sizeof( TCHAR );
+  cszDLL = ( wcslen( szDLLPath ) + 1 ) * sizeof( WCHAR );
   
   // Injection
   lpAddress = VirtualAllocEx( hProcess, NULL, cszDLL, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
@@ -53,7 +53,7 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 
   switch( uMsg ) {
     case WM_INITDIALOG: {
-      TCHAR lpPath[MAX_PATH] = {0};
+      WCHAR lpPath[MAX_PATH] = {0};
       DWORD cbData           = sizeof( lpPath );
 
       TC_ITEM tci     = {0};
