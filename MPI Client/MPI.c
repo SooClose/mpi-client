@@ -7,8 +7,8 @@ HANDLE InjectDLL( DWORD dwPID, LPCWSTR szDLLPath, HMODULE* lphInjected ) {
   HMODULE hMod;
   HANDLE  hThread;
   HANDLE  hProcess = OpenProcess( PROCESS_CREATE_THREAD | 
-                 PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION |
-                 PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, dwPID );
+      PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION |
+      PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, dwPID );
 
   if( hProcess == NULL ) {
     return NULL;
@@ -30,8 +30,8 @@ HANDLE InjectDLL( DWORD dwPID, LPCWSTR szDLLPath, HMODULE* lphInjected ) {
   }
 
   hThread = CreateRemoteThread( hProcess, NULL, 0,
-                        (LPTHREAD_START_ROUTINE)( GetProcAddress( hMod,
-                        "LoadLibraryW" ) ), lpAddress, 0, NULL );
+        (LPTHREAD_START_ROUTINE)( GetProcAddress( hMod,
+        "LoadLibraryW" ) ), lpAddress, 0, NULL );
 
   // Locate address our payload was loaded
   if( hThread != 0 ) {
@@ -44,46 +44,95 @@ HANDLE InjectDLL( DWORD dwPID, LPCWSTR szDLLPath, HMODULE* lphInjected ) {
   return hThread != 0 ? hProcess : NULL;
 }
 
+void* GetPayloadExportAddr( LPCWSTR lpPath, HMODULE hPayloadBase, LPCSTR lpFunctionName ) {
+  // Load payload in our own virtual address space
+  HMODULE hLoaded = LoadLibrary( lpPath );
+
+  if( hLoaded == NULL ) {
+    return NULL;
+  } else {
+    void* lpFunc   = GetProcAddress( hLoaded, lpFunctionName );
+    DWORD dwOffset = (DWORD)lpFunc - (DWORD)hLoaded;
+    
+    FreeLibrary( hLoaded );
+    return (DWORD)hPayloadBase + dwOffset;
+  }
+}
+
+BOOL InitPayload( HANDLE hProcess, LPCWSTR lpPath, HMODULE hPayloadBase, HWND hwndDlg ) {
+  void* lpInit = GetPayloadExportAddr( lpPath, hPayloadBase, "Init" );
+  if( lpInit == NULL ) {
+    return FALSE;
+  } else {
+    HANDLE hThread = CreateRemoteThread( hProcess, NULL, 0,
+        lpInit, hwndDlg, 0, NULL );
+
+    if( hThread == NULL ) {
+      return FALSE;
+    } else {
+      CloseHandle( hThread );
+    }
+  }
+
+  return TRUE;
+}
+
+BOOL CleanupPayload( HANDLE hProcess, LPCWSTR lpPath, HMODULE hPayloadBase ) {
+  void* lpCleanup = GetPayloadExportAddr( lpPath, hPayloadBase, "Cleanup" );
+  if( lpCleanup == NULL ) {
+    return FALSE;
+  } else {
+    HANDLE hThread = CreateRemoteThread( hProcess, NULL, 0,
+        lpCleanup, NULL, 0, NULL );
+
+    if( hThread == NULL ) {
+      return FALSE;
+    } else {
+      CloseHandle( hThread );
+    }
+  }
+
+  return TRUE;
+}
+
+void CreateTabs( HWND hwndDlg, HWND* lpHwndPlain, HWND* lpHwndFormatted ) {
+  TC_ITEM tci     = {0};
+  HWND    hwndTab = GetDlgItem( hwndDlg, IDC_TAB );
+
+  // Add tabs
+  tci.mask    = TCIF_TEXT;
+  tci.pszText = L"Plain Log";
+  TabCtrl_InsertItem( hwndTab, 0, &tci );
+
+  tci.pszText = L"Formatted Log";
+  TabCtrl_InsertItem( hwndTab, 1, &tci );
+
+  // Add tab contents. Also pass in parent window ( this ) as lParam.
+  // This is later used to share the image list.
+  *lpHwndPlain     = CreateDialogParam( GetModuleHandle( NULL ),
+      MAKEINTRESOURCE( IDD_PLAIN ), hwndTab, PlainDialogProc, ( LPARAM )hwndDlg );
+  *lpHwndFormatted = CreateDialogParam( GetModuleHandle( NULL ),
+      MAKEINTRESOURCE( IDD_FORMATTED ), hwndTab, FormattedDialogProc, ( LPARAM )hwndDlg );
+}
+
 // DialogProc for main window
 INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
   static HWND       hwndPlain      = NULL;
   static HWND       hwndFormatted  = NULL;
   static int        nLastActiveTab = 0;
-  static HIMAGELIST hImageList = NULL;
+  static HIMAGELIST hImageList     = NULL;
+
+  static HANDLE     hProcess       = NULL;
+  static HMODULE    hInjected      = NULL;
 
   switch( uMsg ) {
     case WM_INITDIALOG: {
       WCHAR lpPath[MAX_PATH] = {0};
       DWORD cbData           = sizeof( lpPath );
 
-      TC_ITEM tci     = {0};
-      HWND    hwndTab = GetDlgItem( hwndDlg, IDC_TAB );
-
-      // Add tabs
-      tci.mask    = TCIF_TEXT;
-      tci.pszText = L"Plain Log";
-      TabCtrl_InsertItem( hwndTab, 0, &tci );
-
-      tci.pszText = L"Formatted Log";
-      TabCtrl_InsertItem( hwndTab, 1, &tci );
-
-      // Add tab contents. Also pass in parent window ( this ) as lParam.
-      // This is later used to share the image list.
-      hwndPlain     = CreateDialogParam( GetModuleHandle( NULL ),
-          MAKEINTRESOURCE( IDD_PLAIN ), hwndTab, PlainDialogProc, ( LPARAM )hwndDlg );
-      hwndFormatted = CreateDialogParam( GetModuleHandle( NULL ),
-          MAKEINTRESOURCE( IDD_FORMATTED ), hwndTab, FormattedDialogProc, ( LPARAM )hwndDlg );
-
       // Check payload exists at alleged location
       if( RegGetValue( HKEY_CURRENT_USER, REGPATH_SUBKEY, REGVAL_LOCATION,
           RRF_RT_REG_SZ, NULL, lpPath, &cbData ) == ERROR_SUCCESS ) {
-        HANDLE  hProcess  = NULL;
-        HANDLE  hThread   = NULL;
-        HMODULE hLoaded   = NULL;
-        HMODULE hInjected = NULL;
-        FARPROC lpFunc    = NULL;
-        DWORD   dwOffset  = 0;
-
         if( !PathFileExists( lpPath ) ) {
           MessageBox( hwndDlg, L"Payload does not exist at specified location",
               L"Please restart MPI with valid settings", MB_OK | MB_ICONEXCLAMATION );
@@ -99,35 +148,12 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
           break;
         }
 
-        // Load payload in our own virtual address space
-        hLoaded = LoadLibrary( lpPath );
-        if( hLoaded == NULL ) {
-          MessageBox( hwndDlg, L"Problem loading MPI payload into MPI client",
-              L"Exiting MPI :(", MB_OK | MB_ICONEXCLAMATION);
-          SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
-          break;
-        }
-
-        lpFunc  = GetProcAddress( hLoaded, "Init" );
-
-        // Calculate offset of exported function Init() from base
-        dwOffset = ( DWORD )lpFunc - ( DWORD )hLoaded;
-        FreeLibrary( hLoaded );
-
-        // Use this offset to calculate VA for Init() in target and invoke it
-        hThread = CreateRemoteThread( hProcess, NULL, 0,
-            ( LPTHREAD_START_ROUTINE )( dwOffset + ( DWORD )hInjected ),
-            hwndDlg, 0, NULL );
-
-        CloseHandle( hProcess );
-
-        if( hThread == NULL ) {
-          MessageBox( hwndDlg, L"Problem with initial communications",
+        // Initialise payload
+        if( !InitPayload( hProcess, lpPath, hInjected, hwndDlg ) ) {
+          MessageBox( hwndDlg, L"Problem with initialising payload",
               L"Exiting MPI :(", MB_OK | MB_ICONEXCLAMATION );
           SendMessage( hwndDlg, WM_CLOSE, 0, 0 );
           break;
-        } else {
-          CloseHandle( hThread );
         }
       } else {
         MessageBox( hwndDlg, L"Problem reading payload location from registry",
@@ -136,6 +162,7 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
         break;
       }
 
+      CreateTabs( hwndDlg, &hwndPlain, &hwndFormatted );
       break;
     }
     // Packet received in its raw form
@@ -244,6 +271,15 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
       break;
     }
     case WM_CLOSE: {
+      WCHAR lpPath[MAX_PATH] = {0};
+      DWORD cbData           = sizeof( lpPath );
+
+      // At this point we should be able to assume the path is valid
+      RegGetValue( HKEY_CURRENT_USER, REGPATH_SUBKEY, REGVAL_LOCATION,
+          RRF_RT_REG_SZ, NULL, lpPath, &cbData );
+
+      CleanupPayload( hProcess, lpPath, hInjected );
+
       // Give content tabs a chance to cleanup
       if( hwndPlain != NULL ) {
         SendMessage( hwndPlain, WM_CLOSE, 0, 0 );
@@ -253,6 +289,9 @@ INT_PTR CALLBACK MPIProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
         SendMessage( hwndFormatted, WM_CLOSE, 0, 0 );
       }
 
+      if( hProcess != NULL ) {
+        CloseHandle( hProcess );
+      }
       EndDialog( hwndDlg, 0 );
       break;
     }
