@@ -1,4 +1,4 @@
-#summary Mike's Packet Editor
+#summary Mike's Packet Inspector
 
 = Introduction =
 
